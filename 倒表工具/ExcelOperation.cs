@@ -8,6 +8,7 @@ using Spire.Doc;
 using Spire.Xls;
 using Spire.Doc.Fields;
 using System.Drawing;
+//using Spire.Xls.Core;
 
 namespace 倒表工具
 {
@@ -22,10 +23,11 @@ namespace 倒表工具
 
         public void Excel2Docx()
         {
+            filename = filename.Replace("\"", "");
             Workbook workbook = new Workbook();
             workbook.LoadFromFile(filename);
 
-
+            //Spire.Xls.Core.IConditionalFormat;
             Document doc = new Document();
             Section section = doc.AddSection();
             //指定表格字体及大小
@@ -43,8 +45,8 @@ namespace 倒表工具
                 else
                 {
 
-                    String headText = sheet.Range["B2"].Text + "  " + sheet.Range["B3"].Value;
-
+                    String headText = sheet.Range["B2"].FormulaValue + "  " + sheet.Range["B3"].FormulaValue;
+                    Console.WriteLine("",sheet.Range["B2"].FormulaValue, sheet.Range["B3"].FormulaValue);
                     Paragraph paragraph = section.AddParagraph();
                     paragraph.AppendText(headText);
                     paragraph.ApplyStyle(BuiltinStyle.Heading2);
@@ -52,7 +54,12 @@ namespace 倒表工具
                     //添加表格并将相应的位置合并
                     Table table = section.AddTable(true);
                     table.ResetCells(10, 6);
-
+                    for(int m = 0;m < 10;m++)
+                        for(int n = 0;n < 6;n++)
+                        {
+                            table.Rows[m].Cells[n].Width = 60;
+                        }
+                    
                     //前两行
                     TableRow row = table.Rows[0];
                     TextRange range = row.Cells[0].AddParagraph().AppendText("SIF描述");
@@ -105,15 +112,16 @@ namespace 倒表工具
                     str = string.Empty;
                     string[] head = new string[6] { "B", "C", "D", "E", "F", "G" };
                     int[] num = new int[4] { 30, 33, 36, 39 };
+                    int[] cols = new int[6] { 1, 2, 3, 4, 5, 6 };
                     foreach (int i in num)
                     {
                         //人员
-                        foreach (string h in head)
+                        foreach (int col in cols)
                         {
-                            Console.WriteLine(sheet.Range[h + i.ToString()].Style.Color.ToString() + "\t" + h + i.ToString());
-                            if (sheet.Range[h + i.ToString()].Style.Color.ToString() == @"Color [A=255, R=255, G=0, B=0]")
+                            Console.WriteLine(sheet.Rows[i-1].Cells[col].Style.Color.ToString() + col + i.ToString());
+                            if (sheet.Range[col + i.ToString()].Style.PatternColor == Color.Red)
                             {
-                                str = sheet.Range[h + i.ToString()].Text;
+                                str = sheet.Range[col + i.ToString()].Text;
                                 if (str == null || str.Replace(" ", "") == string.Empty )
                                 {
                                     range = table[7, 3].AddParagraph().AppendText(str);
@@ -123,41 +131,42 @@ namespace 倒表工具
                                 break;
                             }
                         }
-                        if(str != string.Empty)
-                        {
-                            //环境
-                            int l = i+1;
-                            foreach (string h in head)
-                            {
-                                if (sheet.Range[h + l.ToString()].Style.Color == Color.Red)
-                                {
-                                    str = sheet.Range[h + l.ToString()].Text;
-                                    if (str.Replace(" ", "") == string.Empty)
-                                    {
-                                        range = table[8, 3].AddParagraph().AppendText(str);
-                                    }
-                                    else
-                                        range = table[8, 3].AddParagraph().AppendText("NA");
-                                    break;
-                                }
-                            }
-                            //财产
-                            l++;
-                            foreach (string h in head)
-                            {
-                                if (sheet.Range[h + l.ToString()].Style.Color == Color.Red)
-                                {
-                                    str = sheet.Range[h + l.ToString()].Text;
-                                    if (str.Replace(" ", "") == string.Empty)
-                                    {
-                                        range = table[9, 3].AddParagraph().AppendText(str);
-                                    }
-                                    else
-                                        range = table[9, 3].AddParagraph().AppendText("NA");
-                                    break;
-                                }
-                            }
-                        }
+                        //if(str != string.Empty)
+                        //{
+                        //    //环境
+                        //    int l = i+1;
+                        //    foreach (string h in head)
+                        //    {
+                        //        if (sheet.Range[h + l.ToString()].Style.Color == Color.Red)
+                        //        {
+                        //            str = sheet.Range[h + l.ToString()].Text;
+                        //            if (str.Replace(" ", "") == string.Empty)
+                        //            {
+                        //                range = table[8, 3].AddParagraph().AppendText(str);
+                        //            }
+                        //            else
+                        //                range = table[8, 3].AddParagraph().AppendText("NA");
+                        //            break;
+                        //        }
+                        //    }
+                        //    //财产
+
+                        //    l++;
+                        //    foreach (string h in head)
+                        //    {
+                        //        if (sheet.Range[h + l.ToString()].Style.Color == Color.Red)
+                        //        {
+                        //            str = sheet.Range[h + l.ToString()].Text;
+                        //            if (str.Replace(" ", "") == string.Empty)
+                        //            {
+                        //                range = table[9, 3].AddParagraph().AppendText(str);
+                        //            }
+                        //            else
+                        //                range = table[9, 3].AddParagraph().AppendText("NA");
+                        //            break;
+                        //        }
+                        //    }
+                        //}
                     }
                     
                     
@@ -169,9 +178,11 @@ namespace 倒表工具
                     {
                         foreach (TableCell cell in rowl.Cells)
                         {
+                            cell.CellFormat.VerticalAlignment = VerticalAlignment.Middle;
                             foreach (Paragraph pg in cell.Paragraphs)
                             {
                                 pg.ApplyStyle(sty.Name);
+                                pg.Format.HorizontalAlignment = HorizontalAlignment.Center;
                             }
                         }
 
@@ -183,6 +194,9 @@ namespace 倒表工具
                     table.ApplyHorizontalMerge(5, 0, 2);
                     table.ApplyHorizontalMerge(6, 0, 2);
                     table.ApplyHorizontalMerge(1, 3, 5);
+                    table.ApplyHorizontalMerge(2, 1, 2);
+                    table.ApplyHorizontalMerge(3, 1, 2);
+                    table.ApplyHorizontalMerge(4, 1, 2);
                     table.ApplyHorizontalMerge(2, 3, 5);
                     table.ApplyHorizontalMerge(3, 3, 5);
                     table.ApplyHorizontalMerge(4, 3, 5);
